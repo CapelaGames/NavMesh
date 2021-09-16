@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
+[RequireComponent(typeof(NavMeshObstacle))]
 public class SlidingDoor : MonoBehaviour
 {
     private Vector3 startingPoint;
@@ -14,33 +16,92 @@ public class SlidingDoor : MonoBehaviour
     private bool isOpen = false;
     Coroutine running;
 
+    NavMeshObstacle obstacle;
+
+
+    [SerializeField] 
+    private bool _isLocked;//field
+    public bool IsLocked//properties
+    {
+        set
+        {
+            _isLocked = value;
+            if(value) // value == true
+            {
+                if (running != null) StopCoroutine(running);
+                if(obstacle != null) obstacle.carving = true;
+
+            }
+            else
+            {
+                if(obstacle != null) obstacle.carving = false;
+            }
+        }
+        get
+        {
+            return _isLocked;
+        }
+    }
+
+    private void OnValidate()
+    {
+        if (_isLocked == false) // value == true
+        {
+            if (running != null) StopCoroutine(running);
+            if (obstacle != null) obstacle.carving = true;
+
+        }
+        else
+        {
+            if (obstacle != null) obstacle.carving = false;
+        }
+    }
+
+    private void Awake()
+    {
+        obstacle = GetComponent<NavMeshObstacle>();
+    }
+
     void Start()
     {
         startingPoint = transform.position;
         openPosition = transform.position + (direction.normalized * distance);
         nextTimeDoorMoves = waitTime;
     }
+
     void Update()
     {
-        if ( nextTimeDoorMoves < Time.time)
+        OpenCloseDoor();
+    }
+
+    void OpenCloseDoor()
+    {
+        if (IsLocked)
+        {
+            return;
+        }
+
+        if (nextTimeDoorMoves <= Time.time)
         {
             nextTimeDoorMoves = Time.time + waitTime;
-            if(isOpen)
-            {
-                if(running != null) StopCoroutine(running);
+
+            if (isOpen)
+            {//Closing
+                if (running != null) StopCoroutine(running);
                 running = StartCoroutine(MoveDoor(startingPoint));
                 isOpen = false;
             }
             else
-            {
+            {//Opening
                 isOpen = true;
                 if (running != null) StopCoroutine(running);
                 running = StartCoroutine(MoveDoor(openPosition));
-                
             }
             Debug.Log("MOVE DOOR");
         }
     }
+
+
     IEnumerator MoveDoor(Vector3 position)
     {
         while(Vector3.Distance(transform.position, position) > Time.deltaTime * speed)
