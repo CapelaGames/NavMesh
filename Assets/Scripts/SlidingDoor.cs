@@ -65,8 +65,8 @@ public class SlidingDoor : MonoBehaviour
 
     void Start()
     {
-        startingPoint = transform.position;
-        openPosition = transform.position + (direction.normalized * distance);
+        startingPoint = transform.position; ;
+        openPosition = transform.position + transform.rotation * (direction.normalized * distance);
 
         nextTimeDoorMoves = waitTime;
     }
